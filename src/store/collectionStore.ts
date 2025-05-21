@@ -39,13 +39,15 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   },
   
   createCollection: async (title: string, mediaIds: string[]) => {
+   const {data: { user }}  = await supabase.auth.getUser()
     try {
+
       set({ loading: true, error: null });
       
       // Create collection
       const { data, error } = await supabase
         .from('collections')
-        .insert({ title })
+        .insert({ title, user_id: user?.id })
         .select()
         .single();
         
@@ -83,19 +85,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       set({ processing: true, error: null });
       
       // This would call your FastAPI backend
-      const response = await fetch('https://api.yourfastapibackend.com/generate-summary', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          media_items: mediaItems.map(item => ({
-            file_name: item.file_name,
-            taken_at: item.taken_at,
-            location: item.location,
-          })),
-        }),
-      });
+      const response = await fetch(import.meta.env.VITE_FASTAPI_URL);
       
       if (!response.ok) {
         throw new Error('Failed to generate AI summary');
