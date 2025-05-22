@@ -7,7 +7,7 @@ import { registerSW } from './utils/registerSW';
 import { AuthProvider, RequireAuth } from './utils/auth'; // Import RequireAuth
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
+import LoginPage, { loginAction } from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import UploadPage from './pages/UploadPage';
 import GalleryPage from './pages/GalleryPage';
@@ -35,7 +35,11 @@ const router = createBrowserRouter([
         element: <Layout />,
         children: [
           { index: true, element: <HomePage /> },
-          { path: 'login', element: <LoginPage /> },
+          { 
+            path: 'login', 
+            element: <LoginPage />,
+            action: loginAction
+          },
           { path: 'register', element: <RegisterPage /> },
           {
             path: 'upload',

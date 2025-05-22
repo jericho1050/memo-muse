@@ -1,39 +1,52 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, Form, useActionData, ActionFunctionArgs } from 'react-router-dom';
 import { Lock, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 
+interface ActionData {
+  error?: string;
+  success?: boolean;
+}
+
+// Action function that will be exported and used in route configuration
+export async function loginAction({ request }: ActionFunctionArgs): Promise<ActionData> {
+  const formData = await request.formData();
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+  
+  // Basic validation
+  if (!email || !password) {
+    return { error: 'Please enter both email and password' };
+  }
+  
+  try {
+    // Access the auth store directly since we're outside the component
+    const { signIn } = useAuthStore.getState();
+    await signIn(email, password);
+    return { success: true };
+  } catch (err: unknown) {
+    const error = err as { status?: number; message?: string };
+    if (error?.status && error.status >= 400) {
+      return { error: error.message || 'Invalid email or password' };
+    } else {
+      return { error: error.message || 'Failed to sign in' };
+    }
+  }
+}
+
 function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const { signIn, loading } = useAuthStore();
+  const actionData = useActionData() as ActionData;
+  const { loading } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   
   const from = location.state?.from?.pathname || '/gallery';
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    
-    if (!email || !password) {
-      setError('Please enter both email and password');
-      return;
-    }
-    
-    try {
-      await signIn(email, password);
-      navigate(from, { replace: true });
-    } catch (err: any) {
-      if (err?.status && err.status >= 400) {
-        setError(err.message || 'Invalid email or password');
-      } else {
-        setError(err.message || 'Failed to sign in');
-      }
-    }
-  };
+  // If login was successful, redirect to the intended page
+  if (actionData?.success) {
+    navigate(from, { replace: true });
+  }
 
   return (
     <div className="max-w-md mx-auto">
@@ -47,13 +60,13 @@ function LoginPage() {
           <p className="text-gray-600 mt-2">Sign in to access your memories</p>
         </div>
         
-        {error && (
+        {actionData?.error && (
           <div className="bg-red-50 text-red-500 p-3 rounded-md mb-6">
-            {error}
+            {actionData.error}
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <Form method="post" className="space-y-6">
           <div className="space-y-2">
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email
@@ -64,9 +77,8 @@ function LoginPage() {
               </div>
               <input
                 id="email"
+                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 placeholder="you@example.com"
@@ -84,9 +96,8 @@ function LoginPage() {
               </div>
               <input
                 id="password"
+                name="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 required
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 placeholder="••••••••"
@@ -105,7 +116,7 @@ function LoginPage() {
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
-        </form>
+        </Form>
         
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
