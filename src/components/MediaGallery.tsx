@@ -243,7 +243,7 @@ function MediaGallery() {
         console.log("Final error type:", errorType);
         console.log("Final error message:", userFriendlyMessage);
         
-        // Set the error message in state instead of showing an alert
+        // Set the error message in state r instead of showing an alert
         setErrorMessage({ message: userFriendlyMessage, type: errorType });
         throw new Error(userFriendlyMessage);
       }

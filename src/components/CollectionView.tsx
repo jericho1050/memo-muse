@@ -20,7 +20,7 @@ import { useMediaStore } from "../store/mediaStore";
 import { Modal } from "./Modal";
 import { constructMediaUrl } from "../utils/mediaUtils";
 import { MediaLightbox } from "./MediaLightbox";
-import { parseMarkdown } from "../utils/parseMarkdown";
+import { MarkdownRenderer } from "../utils/parseMarkdown";
 
 function CollectionView() {
   const { id } = useParams<{ id: string }>();
@@ -568,8 +568,9 @@ function CollectionView() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="prose prose-indigo max-w-none"
-            dangerouslySetInnerHTML={{ __html: parseMarkdown(collection.ai_summary) }}
-          />
+          >
+            <MarkdownRenderer content={collection.ai_summary} />
+          </motion.div>
         ) : (
           <div className="text-center py-8">
             <p className="text-gray-500">
@@ -594,10 +595,9 @@ function CollectionView() {
               <ul className="mt-4 space-y-3">
                 {collection.journal_prompts.map((prompt, index) => (
                   <li key={index} className="bg-indigo-50 p-4 rounded-md">
-                    <div
-                      className="text-gray-700"
-                      dangerouslySetInnerHTML={{ __html: parseMarkdown(prompt) }}
-                    />
+                    <div className="text-gray-700">
+                      <MarkdownRenderer content={prompt} />
+                    </div>
                   </li>
                 ))}
               </ul>
