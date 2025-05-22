@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { supabase, Collection, Media } from '../lib/supabase';
 import { constructMediaUrl } from '../utils/mediaUtils';
 
+// Add this type for error handling
+type ApiError = Error | { message: string } | unknown;
+
 interface CollectionState {
   collections: Collection[];
   collectionMedia: Record<string, Media[]>;
@@ -17,6 +20,16 @@ interface CollectionState {
   addMediaToCollection: (collectionId: string, mediaIds: string[]) => Promise<void>;
   removeMediaFromCollection: (collectionId: string, mediaIds: string[]) => Promise<void>;
 }
+
+// Helper function to extract error message
+const getErrorMessage = (error: ApiError): string => {
+  if (error instanceof Error) {
+    return error.message;
+  } else if (typeof error === 'object' && error !== null && 'message' in error) {
+    return (error as { message: string }).message;
+  }
+  return 'An unknown error occurred';
+};
 
 export const useCollectionStore = create<CollectionState>((set, get) => ({
   collections: [],
@@ -39,9 +52,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       const collections = data as Collection[];
       set({ collections });
       return collections;
-    } catch (error: any) {
+    } catch (error: ApiError) {
       console.error('Error fetching collections:', error);
-      set({ error: error.message });
+      set({ error: getErrorMessage(error) });
       return [];
     } finally {
       set({ loading: false });
@@ -81,9 +94,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       set({ collections: [collection, ...get().collections] });
       
       return collection;
-    } catch (error: any) {
+    } catch (error: ApiError) {
       console.error('Error creating collection:', error);
-      set({ error: error.message });
+      set({ error: getErrorMessage(error) });
       return null;
     } finally {
       set({ loading: false });
@@ -94,8 +107,23 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     try {
       set({ processing: true, error: null });
       
+      // Check if there are any media items
+      if (mediaItems.length === 0) {
+        throw new Error('No media items available to generate a story.');
+      }
+
+      // Filter out non-image files or unsupported formats
+      const supportedMediaItems = mediaItems.filter(item => 
+        item.file_type?.startsWith('image/') && 
+        !item.file_type?.includes('gif')
+      );
+
+      if (supportedMediaItems.length === 0) {
+        throw new Error('No supported image formats found. Please use JPEG or PNG images.');
+      }
+      
       // Prepare the media items for the API
-      const mediaItemsForApi = mediaItems.map(img => {
+      const mediaItemsForApi = supportedMediaItems.map(img => {
         // Use the constructMediaUrl utility function
         const imageUrl = constructMediaUrl(img.thumbnail_url || img.file_path);
         
@@ -107,6 +135,8 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
         };
       });
       
+      console.log("Sending to API:", JSON.stringify({ media_items: mediaItemsForApi }));
+      
       // Call the FastAPI backend
       const response = await fetch(`${import.meta.env.VITE_FASTAPI_URL}/generate-summary`, {
         method: 'POST',
@@ -117,17 +147,65 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       });
       
       if (!response.ok) {
-        throw new Error('Failed to generate AI summary');
+        // Try to get detailed error information
+        let errorMessage = 'Failed to generate AI summary';
+        
+        try {
+          const errorData = await response.json();
+          
+          // Extract error message if available
+          if (errorData.detail && typeof errorData.detail === 'string') {
+            const groqErrorMatch = errorData.detail.match(/Groq API error:.*Response: ({.*})/);
+            if (groqErrorMatch) {
+              try {
+                const groqErrorJson = JSON.parse(groqErrorMatch[1]);
+                if (groqErrorJson.error && groqErrorJson.error.message) {
+                  errorMessage = groqErrorJson.error.message;
+                }
+              } catch (parseError) {
+                console.error("Error parsing Groq error JSON:", parseError);
+              }
+            } else {
+              errorMessage = errorData.detail;
+            }
+          }
+        } catch (err) {
+          console.error("Error parsing error response:", err);
+        }
+        
+        throw new Error(errorMessage);
       }
       
-      const data = await response.json();
+      // Log the raw response for debugging
+      const responseText = await response.text();
+      console.log("Raw API response:", responseText);
+      
+      // Try to parse the response
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (err) {
+        console.error("Error parsing API response:", err);
+        throw new Error("Received an invalid response from the server.");
+      }
+      
+      // Validate response data
+      if (!data.summary || typeof data.summary !== 'string') {
+        throw new Error("Invalid summary returned from the API.");
+      }
+      
+      // Clean up summary and prompts
+      const cleanSummary = data.summary.replace(/\$2/g, '').trim();
+      const cleanPrompts = Array.isArray(data.prompts) 
+        ? data.prompts.map((p: unknown) => typeof p === 'string' ? p.replace(/\$2/g, '').trim() : '')
+        : [];
       
       // Update collection with AI summary
       const { error } = await supabase
         .from('collections')
         .update({
-          ai_summary: data.summary,
-          journal_prompts: data.prompts,
+          ai_summary: cleanSummary,
+          journal_prompts: cleanPrompts.filter((p: string) => p !== ''),
         })
         .eq('id', collectionId);
         
@@ -137,14 +215,20 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       set({
         collections: get().collections.map(c => 
           c.id === collectionId
-            ? { ...c, ai_summary: data.summary, journal_prompts: data.prompts }
+            ? { 
+                ...c, 
+                ai_summary: cleanSummary, 
+                journal_prompts: cleanPrompts.filter((p: string) => p !== '') 
+              }
             : c
         ),
       });
       
-    } catch (error: any) {
+    } catch (error: ApiError) {
       console.error('Error generating AI summary:', error);
-      set({ error: error.message });
+      set({ error: getErrorMessage(error) });
+      // Re-throw the error so we can handle it in the component
+      throw error;
     } finally {
       set({ processing: false });
     }
@@ -164,9 +248,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       
       // Update local state
       set({ collections: get().collections.filter(c => c.id !== id) });
-    } catch (error: any) {
+    } catch (error: ApiError) {
       console.error('Error deleting collection:', error);
-      set({ error: error.message });
+      set({ error: getErrorMessage(error) });
     } finally {
       set({ loading: false });
     }
@@ -190,9 +274,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
           c.id === id ? { ...c, ...data } : c
         ),
       });
-    } catch (error: any) {
+    } catch (error: ApiError) {
       console.error('Error updating collection:', error);
-      set({ error: error.message });
+      set({ error: getErrorMessage(error) });
     } finally {
       set({ loading: false });
     }
@@ -215,9 +299,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       if (error) throw error;
       
       // No need to update local state as the collection view will refresh
-    } catch (error: any) {
+    } catch (error: ApiError) {
       console.error('Error adding media to collection:', error);
-      set({ error: error.message });
+      set({ error: getErrorMessage(error) });
     } finally {
       set({ loading: false });
     }
@@ -237,9 +321,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       if (error) throw error;
       
       // No need to update local state as the collection view will refresh
-    } catch (error: any) {
+    } catch (error: ApiError) {
       console.error('Error removing media from collection:', error);
-      set({ error: error.message });
+      set({ error: getErrorMessage(error) });
     } finally {
       set({ loading: false });
     }
@@ -295,8 +379,10 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       }));
       
       return mediaItems as Media[];
-    } catch (error) {
+    } catch (error: ApiError) {
       console.error('Error fetching collection media:', error);
+      // Set error in the store
+      set({ error: getErrorMessage(error) });
       return [];
     }
   },

@@ -20,6 +20,7 @@ import { useMediaStore } from "../store/mediaStore";
 import { Modal } from "./Modal";
 import { constructMediaUrl } from "../utils/mediaUtils";
 import { MediaLightbox } from "./MediaLightbox";
+import { parseMarkdown } from "../utils/parseMarkdown";
 
 function CollectionView() {
   const { id } = useParams<{ id: string }>();
@@ -66,6 +67,9 @@ function CollectionView() {
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  // AI error state
+  const [aiError, setAiError] = useState<string | null>(null);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -162,7 +166,16 @@ function CollectionView() {
 
   const handleGenerateAI = () => {
     if (!collection || mediaItems.length === 0) return;
-    generateAISummary(collection.id, mediaItems);
+    
+    // Reset error state before generating
+    setAiError(null);
+    
+    // Attempt to generate the summary
+    generateAISummary(collection.id, mediaItems)
+      .catch((error) => {
+        console.error("Error caught in component:", error);
+        setAiError(error.message || "Failed to generate summary. Please try again.");
+      });
   };
 
   const handleUpdateCollection = async () => {
@@ -504,27 +517,69 @@ function CollectionView() {
           )}
         </div>
 
+        {aiError && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">Error generating story</h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>{aiError}</p>
+                  {aiError.includes('format') && (
+                    <div className="mt-2">
+                      <p className="font-medium">Supported formats:</p>
+                      <ul className="list-disc pl-5 mt-1">
+                        <li>Static images (JPEG, PNG)</li>
+                        <li>Animated GIFs and other formats are not supported</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {processing ? (
-          <div className="space-y-4">
-            <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded animate-pulse w-5/6"></div>
-            <div className="h-4 bg-gray-200 rounded animate-pulse w-4/6"></div>
+          <div className="space-y-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-gray-600">Generating story from your images...</p>
+            </div>
+            
+            <div className="bg-indigo-50 p-4 rounded-md">
+              <p className="text-sm text-indigo-700">This may take up to a minute. Our AI is analyzing your photos and creating a personalized story.</p>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 bg-gray-200 rounded animate-pulse w-5/6"></div>
+              <div className="h-4 bg-gray-200 rounded animate-pulse w-4/6"></div>
+              <div className="h-4 bg-gray-200 rounded animate-pulse w-5/6"></div>
+              <div className="h-4 bg-gray-200 rounded animate-pulse w-3/6"></div>
+            </div>
           </div>
         ) : collection.ai_summary ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="prose prose-indigo max-w-none"
-          >
-            <p className="text-gray-700 leading-relaxed">
-              {collection.ai_summary}
-            </p>
-          </motion.div>
+            dangerouslySetInnerHTML={{ __html: parseMarkdown(collection.ai_summary) }}
+          />
         ) : (
           <div className="text-center py-8">
             <p className="text-gray-500">
               Generate an AI-powered story from your memories
             </p>
+            {mediaItems.length === 0 && (
+              <p className="text-sm text-amber-600 mt-2">
+                Add some photos to your collection first!
+              </p>
+            )}
           </div>
         )}
 
@@ -539,7 +594,10 @@ function CollectionView() {
               <ul className="mt-4 space-y-3">
                 {collection.journal_prompts.map((prompt, index) => (
                   <li key={index} className="bg-indigo-50 p-4 rounded-md">
-                    <p className="text-gray-700">{prompt}</p>
+                    <div
+                      className="text-gray-700"
+                      dangerouslySetInnerHTML={{ __html: parseMarkdown(prompt) }}
+                    />
                   </li>
                 ))}
               </ul>
