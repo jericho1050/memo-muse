@@ -27,7 +27,11 @@ function LoginPage() {
       await signIn(email, password);
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
+      if (err?.status && err.status >= 400) {
+        setError(err.message || 'Invalid email or password');
+      } else {
+        setError(err.message || 'Failed to sign in');
+      }
     }
   };
 
