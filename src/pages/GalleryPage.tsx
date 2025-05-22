@@ -3,6 +3,7 @@ import { Plus, Image } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import MediaGallery from '../components/MediaGallery';
+import { TagFilter } from '../components/TagFilter';
 import { Collection, Media } from '../lib/supabase';
 import { useMediaStore } from '../store/mediaStore';
 import { useCollectionStore } from '../store/collectionStore';
@@ -66,7 +67,10 @@ function GalleryPage() {
       </div>
       
       {activeTab === 'media' ? (
-        <MediaGallery />
+        <>
+          <TagFilter />
+          <MediaGallery />
+        </>
       ) : (
         <>
           <div className="flex justify-between items-center mb-6">

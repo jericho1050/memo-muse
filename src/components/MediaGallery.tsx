@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Grid, List, Calendar, Trash, Plus, Film, Sparkles, AlertCircle, Maximize2 } from 'lucide-react';
+import { Grid, List, Calendar, Trash, Plus, Film, Sparkles, AlertCircle, Maximize2, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMediaStore } from '../store/mediaStore';
 import { useCollectionStore } from '../store/collectionStore';
@@ -7,6 +7,8 @@ import { groupMediaByDate, constructMediaUrl } from '../utils/mediaUtils';
 import { Media } from '../lib/supabase';
 import { Check } from './Check';
 import { MediaLightbox } from './MediaLightbox';
+import { useTagStore } from '../store/tagStore';
+import { TagManager } from './TagManager';
 
 import { Modal } from './Modal';
 import { QuickStoryDisplay } from '../utils/parseMarkdown';
@@ -43,6 +45,9 @@ function MediaGallery() {
   const [quickStoryResult, setQuickStoryResult] = useState<{ summary: string; prompts: string[] } | null>(null);
   const [isGeneratingQuickStory, setIsGeneratingQuickStory] = useState(false);
   const [errorMessage, setErrorMessage] = useState<ErrorMessageType | null>(null);
+
+  const { mediaTags, fetchMediaTags, selectedFilter } = useTagStore();
+  const [tagMediaId, setTagMediaId] = useState<string | null>(null);
   
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -53,6 +58,10 @@ function MediaGallery() {
   useEffect(() => {
     fetchMedia();
   }, [fetchMedia]);
+
+  useEffect(() => {
+    media.forEach(m => fetchMediaTags(m.id));
+  }, [media, fetchMediaTags]);
   
   useEffect(() => {
     if (media.length > 0) {
@@ -382,7 +391,13 @@ function MediaGallery() {
       
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {media.map((item: Media, index: number) => (
+          {media
+            .filter(m =>
+              selectedFilter.every(id =>
+                (mediaTags[m.id] || []).some(t => t.id === id)
+              )
+            )
+            .map((item: Media, index: number) => (
             <MediaGridItem
               key={item.id}
               item={item}
@@ -402,7 +417,13 @@ function MediaGallery() {
                 {group.displayDate}
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {group.items.map((item: Media) => {
+                {group.items
+                  .filter(m =>
+                    selectedFilter.every(id =>
+                      (mediaTags[m.id] || []).some(t => t.id === id)
+                    )
+                  )
+                  .map((item: Media) => {
                   // Find index in the main media array
                   const mainIndex = media.findIndex(m => m.id === item.id);
                   return (
@@ -561,8 +582,14 @@ function MediaGallery() {
         </div>
       </Modal>
 
+      <TagManager
+        mediaId={tagMediaId || ''}
+        isOpen={tagMediaId !== null}
+        onClose={() => setTagMediaId(null)}
+      />
+
       {/* Lightbox */}
-      <MediaLightbox 
+      <MediaLightbox
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
         media={media}
@@ -640,6 +667,13 @@ function MediaGridItem({ item, index, isSelected, onSelect, onDelete, onMaximize
         >
           <Trash size={16} />
         </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); setTagMediaId(item.id) }}
+          className="p-2 bg-gray-700 rounded-full text-white hover:bg-gray-800"
+          title="Edit tags"
+        >
+          <Tag size={16} />
+        </button>
       </div>
       
       {/* Maximize button */}
@@ -655,6 +689,13 @@ function MediaGridItem({ item, index, isSelected, onSelect, onDelete, onMaximize
         <p className="text-xs text-white truncate">
           {item.file_name}
         </p>
+        <div className="flex flex-wrap gap-1 mt-1">
+          {(mediaTags[item.id] || []).map(t => (
+            <span key={t.id} className="px-1 bg-white/30 text-[10px] text-white rounded">
+              {t.name}
+            </span>
+          ))}
+        </div>
       </div>
       
       {isSelected && (
