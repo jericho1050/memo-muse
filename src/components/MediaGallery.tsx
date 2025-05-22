@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Grid, List, Calendar, Trash, Plus, Film, Sparkles, AlertCircle, Maximize2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMediaStore } from '../store/mediaStore';
@@ -10,6 +10,7 @@ import { MediaLightbox } from './MediaLightbox';
 
 import { Modal } from './Modal';
 import { QuickStoryDisplay } from '../utils/parseMarkdown';
+import ExportButton from './ExportButton';
 
 type ViewMode = 'grid' | 'timeline';
 
@@ -43,6 +44,7 @@ function MediaGallery() {
   const [quickStoryResult, setQuickStoryResult] = useState<{ summary: string; prompts: string[] } | null>(null);
   const [isGeneratingQuickStory, setIsGeneratingQuickStory] = useState(false);
   const [errorMessage, setErrorMessage] = useState<ErrorMessageType | null>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
   
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -486,7 +488,14 @@ function MediaGallery() {
             {isGeneratingQuickStory ? 'Generating...' : '✨ Generate Story ✨'}
           </button>
 
-          <QuickStoryDisplay collageData={quickStoryResult} isLoading={isGeneratingQuickStory} />
+          <QuickStoryDisplay
+            collageData={quickStoryResult}
+            isLoading={isGeneratingQuickStory}
+            exportRef={exportRef}
+          />
+          {quickStoryResult && !isGeneratingQuickStory && (
+            <ExportButton targetRef={exportRef} />
+          )}
         </div>
       </Modal>
 

@@ -5,8 +5,9 @@ import rehypeSanitize from 'rehype-sanitize';
 import rehypeRaw from 'rehype-raw';
 
 interface CollageDisplayProps {
-  collageData: { summary: string; prompts: string[] } | null;
-  isLoading: boolean;
+collageData: { summary: string; prompts: string[] } | null
+isLoading: boolean
+exportRef?: React.Ref<HTMLDivElement>
 }
 
 // Component for displaying markdown content with consistent styling
@@ -50,7 +51,7 @@ export const parseMarkdown = (markdown: string): string => {
   return markdown;
 };
 
-export const QuickStoryDisplay: React.FC<CollageDisplayProps> = ({ collageData, isLoading }) => {
+export const QuickStoryDisplay: React.FC<CollageDisplayProps> = ({ collageData, isLoading, exportRef }) => {
   // Force re-render with a key based on content hash
   const contentKey = collageData ? 
     `summary-${collageData.summary?.substring(0, 20)}` : 'no-content';
@@ -75,7 +76,7 @@ export const QuickStoryDisplay: React.FC<CollageDisplayProps> = ({ collageData, 
   console.log("Prompts to display:", collageData.prompts);
 
   return (
-    <div className="mt-4 py-4 border-t border-gray-200">
+    <div className="mt-4 py-4 border-t border-gray-200" ref={exportRef}>
       <h4 className="text-lg font-semibold text-gray-800 mb-2">Your AI Generated Story</h4>
       <div 
         key={contentKey}
