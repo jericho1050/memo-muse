@@ -1,20 +1,31 @@
 import { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Plus, Image } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import MediaGallery from '../components/MediaGallery';
+import { Collection, Media } from '../lib/supabase';
 import { useMediaStore } from '../store/mediaStore';
 import { useCollectionStore } from '../store/collectionStore';
+import { constructMediaUrl } from '../utils/mediaUtils';
 
 function GalleryPage() {
-  const { fetchMedia, media } = useMediaStore();
-  const { fetchCollections, collections } = useCollectionStore();
   const [activeTab, setActiveTab] = useState<'media' | 'collections'>('media');
-  
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [loadingCollections, setLoadingCollections] = useState(true);
+  const { fetchMedia } = useMediaStore();
+  const { fetchCollections } = useCollectionStore();
+
   useEffect(() => {
-    fetchMedia();
-    fetchCollections();
-  }, [fetchMedia, fetchCollections]);
+    if (activeTab === 'media') {
+      fetchMedia();
+    } else {
+      setLoadingCollections(true);
+      fetchCollections().then((fetchedCollections) => {
+        setCollections(fetchedCollections);
+        setLoadingCollections(false);
+      });
+    }
+  }, [activeTab, fetchMedia, fetchCollections]);
 
   return (
     <div className="space-y-8">
@@ -57,72 +68,166 @@ function GalleryPage() {
       {activeTab === 'media' ? (
         <MediaGallery />
       ) : (
-        <CollectionsGrid collections={collections} />
+        <>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">Your Collections</h2>
+            <button 
+              className="flex items-center gap-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+              onClick={() => {
+                // You'll need to implement collection creation functionality
+                console.log('Create collection clicked');
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Collection</span>
+            </button>
+          </div>
+          {loadingCollections ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <CollectionsGrid collections={collections} />
+          )}
+        </>
       )}
     </div>
   );
 }
 
-function CollectionsGrid({ collections }: { collections: any[] }) {
+// Format date to a more readable format
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
+
+function CollectionsGrid({ collections }: { collections: Collection[] }) {
+  const navigate = useNavigate();
+  
   if (collections.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <FolderIcon className="w-8 h-8 text-gray-400" />
+      <motion.div
+        className="text-center py-16 bg-white rounded-lg shadow-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="mx-auto w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+          <Image className="w-10 h-10 text-gray-400" />
         </div>
-        <h3 className="text-lg font-medium text-gray-700">No collections yet</h3>
-        <p className="text-gray-500 mt-1">Create collections from your uploaded media</p>
-      </div>
+        <h3 className="text-xl font-medium text-gray-700 mb-2">No collections yet</h3>
+        <p className="text-gray-500 mb-6">Create collections to organize your memories</p>
+        <button 
+          className="inline-flex items-center gap-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+          onClick={() => {
+            console.log('Create collection clicked from empty state');
+          }}
+        >
+          <Plus className="w-4 h-4" />
+          <span>Create your first collection</span>
+        </button>
+      </motion.div>
     );
   }
-
+  
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <motion.div 
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       {collections.map((collection) => (
         <motion.div
           key={collection.id}
-          whileHover={{ y: -5 }}
-          className="bg-white rounded-lg shadow-sm overflow-hidden"
+          className="group relative aspect-square rounded-lg shadow-md overflow-hidden transition-transform hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+          onClick={() => navigate(`/collections/${collection.id}`)}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
         >
-          <Link to={`/collections/${collection.id}`}>
-            <div className="aspect-video bg-gray-100 relative">
-              {/* This would be a preview image in a real app */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <FolderIcon className="w-12 h-12 text-gray-300" />
-              </div>
-            </div>
-            <div className="p-4">
-              <h3 className="text-lg font-medium text-gray-800 truncate">{collection.title}</h3>
-              <p className="text-gray-500 text-sm mt-1">
-                {new Date(collection.created_at).toLocaleDateString()}
-              </p>
-              <div className="mt-4 flex justify-between items-center">
-                <span className="text-xs text-gray-500">
-                  {collection.ai_summary ? 'AI summary available' : 'No AI summary yet'}
-                </span>
-              </div>
-            </div>
-          </Link>
+          <div className="relative w-full h-full bg-gray-100">
+            <CollectionThumbnail collectionId={collection.id} />
+          </div>
+          
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+            <h3 className="text-white font-medium text-lg truncate">{collection.title}</h3>
+            <p className="text-gray-300 text-sm truncate">
+              {formatDate(collection.created_at)}
+            </p>
+          </div>
         </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }
 
-function FolderIcon(props: React.SVGProps<SVGSVGElement>) {
+function CollectionThumbnail({ collectionId }: { collectionId: string }) {
+  const { fetchCollectionMedia } = useCollectionStore();
+  const [media, setMedia] = useState<Media[]>([]);
+  const [mediaCount, setMediaCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchMedia = async () => {
+      setLoading(true);
+      const mediaItems = await fetchCollectionMedia(collectionId);
+      setMediaCount(mediaItems.length);
+      setMedia(mediaItems.filter(item => item.file_type?.startsWith('image/')).slice(0, 4));
+      setLoading(false);
+    };
+    
+    fetchMedia();
+  }, [collectionId, fetchCollectionMedia]);
+  
+  if (loading) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+  
+  if (media.length === 0) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <Image className="w-12 h-12 text-gray-300" />
+      </div>
+    );
+  }
+  
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-    </svg>
+    <div className="absolute inset-0">
+      <div className="grid grid-cols-2 grid-rows-2 gap-1 p-1 w-full h-full">
+        {media.map((item, index) => (
+          <div 
+            key={item.id} 
+            className={`bg-gray-200 rounded overflow-hidden ${
+              media.length === 1 ? 'col-span-2 row-span-2' : 
+              media.length === 2 ? 'col-span-1 row-span-2' : 
+              media.length === 3 && index === 0 ? 'col-span-2 row-span-1' : ''
+            }`}
+          >
+            <img 
+              src={constructMediaUrl(item.thumbnail_url || item.file_path)} 
+              alt={item.file_name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = 'https://placehold.co/400x400/f3f4f6/a1a1aa?text=Image';
+              }}
+            />
+          </div>
+        ))}
+      </div>
+      
+      {/* Media count badge */}
+      <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+        {mediaCount} item{mediaCount !== 1 ? 's' : ''}
+      </div>
+    </div>
   );
 }
 
