@@ -6,7 +6,7 @@ Transform your photos and videos into meaningful memory collections with AI-gene
 
 - **Media Management**: Upload, organize, and view your photos and videos
 - **Automatic Organization**: Extracts EXIF data to organize by date and location
-- **AI Story Generation**: Creates personalized narratives from your media using GPT-4
+- **AI Story Generation**: Creates personalized narratives from your media using Groq's Llama 4 Scout
 - **Journal Prompts**: AI-generated reflection questions to deepen your connection to memories
 - **PWA Support**: Works offline and can be installed on your home screen
 - **Responsive Design**: Optimized for all devices from mobile to desktop
@@ -14,21 +14,21 @@ Transform your photos and videos into meaningful memory collections with AI-gene
 ## Tech Stack
 
 - **Frontend**: React, TypeScript, Vite, Tailwind CSS, Framer Motion
-- **Backend**: FastAPI (Python)
+- **Backend**: FastAPI (Python) with Mangum for serverless deployment
 - **Storage**: Supabase (Auth, Storage, and PostgreSQL)
 - **PWA**: Service workers with vite-plugin-pwa
 - **Authentication**: Supabase Auth
 - **State Management**: Zustand
-- **Deployment**: Netlify (frontend), Render/Heroku/etc. (backend)
+- **Deployment**: Vercel (full-stack deployment)
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js (v18 or newer)
-- Python 3.8+ (for the FastAPI backend)
+- Python 3.8+ (for local development)
 - Supabase account
-- OpenAI API key
+- Groq API key
 
 ### Frontend Setup
 
@@ -43,10 +43,11 @@ Transform your photos and videos into meaningful memory collections with AI-gene
    npm install
    ```
 
-3. Create a `.env` file with your Supabase credentials
+3. Create a `.env` file with your credentials
    ```
    VITE_SUPABASE_URL=your_supabase_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   GROQ_API_KEY=your_groq_api_key
    ```
 
 4. Start the development server
@@ -54,32 +55,22 @@ Transform your photos and videos into meaningful memory collections with AI-gene
    npm run dev
    ```
 
-### Backend Setup
+### Backend Setup (Local Development)
 
-1. Navigate to the FastAPI backend directory
-   ```bash
-   cd fastapi
-   ```
-
-2. Create a virtual environment
+1. Create a virtual environment
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. Install dependencies
+2. Install dependencies
    ```bash
    pip install -r requirements.txt
    ```
 
-4. Create a `.env` file with your OpenAI API key
-   ```
-   OPENAI_API_KEY=your_openai_api_key
-   ```
-
-5. Start the FastAPI server
+3. Start the FastAPI server locally
    ```bash
-   uvicorn app:app --reload
+   uvicorn api.index:app --reload
    ```
 
 ### Supabase Setup
@@ -89,6 +80,31 @@ Transform your photos and videos into meaningful memory collections with AI-gene
 3. Enable Storage and create a bucket called `media`
 4. Set up appropriate bucket policies for authenticated users
 
+## Deployment
+
+### Deploying to Vercel
+
+1. Install Vercel CLI (optional)
+   ```bash
+   npm install -g vercel
+   ```
+
+2. Deploy using Vercel CLI
+   ```bash
+   vercel
+   ```
+
+   Or connect your GitHub repository to Vercel for automatic deployments.
+
+3. Set up environment variables in Vercel dashboard:
+   - `GROQ_API_KEY`
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+
+The API endpoints will be available at:
+- `https://your-vercel-domain.vercel.app/api/generate-summary`
+- `https://your-vercel-domain.vercel.app/api/health`
+
 ## Building for Production
 
 ### Frontend
@@ -97,43 +113,6 @@ Transform your photos and videos into meaningful memory collections with AI-gene
 npm run build
 ```
 
-### Backend
-
-Deploy the FastAPI app to your preferred hosting service (Render, Heroku, etc.)
-
-## Deploying to Netlify
-
-1. Connect your repository to Netlify
-2. Set build command to `npm run build`
-3. Set publish directory to `dist`
-4. Add environment variables for Supabase
-
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Demo Video Script
-
-**Introduction (0:00 - 0:10)**
-"Welcome to AI MomentCollage, an app that transforms your photos into meaningful stories using artificial intelligence."
-
-**Authentication (0:10 - 0:20)**
-"Start by creating an account or signing in to your existing account."
-
-**Uploading Media (0:20 - 0:40)**
-"Upload your photos and videos easily by dragging and dropping them or browsing your files. The app automatically extracts metadata like date and location."
-
-**Gallery View (0:40 - 1:00)**
-"Browse your media in the gallery view, which can be toggled between grid and timeline views. The timeline organizes your photos by date."
-
-**Creating Collections (1:00 - 1:20)**
-"Select multiple photos to create a collection. Give it a name that represents the memory or event."
-
-**AI Story Generation (1:20 - 1:50)**
-"The app generates a personalized story that connects your photos, highlighting emotions and significance. It also creates journal prompts to help you reflect on these memories."
-
-**Offline Capabilities (1:50 - 2:10)**
-"As a Progressive Web App, AI MomentCollage works offline. Add it to your home screen for a native-like experience."
-
-**Conclusion (2:10 - 2:20)**
-"AI MomentCollage: Transforming moments into meaningful memories."

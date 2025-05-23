@@ -8,7 +8,7 @@ import httpx
 import os
 from dotenv import load_dotenv
 from groq import AsyncGroq, APIError
-
+from mangum import Mangum
 
 # Load environment variables
 
@@ -20,7 +20,11 @@ app = FastAPI(title="AI MomentCollage API")
 # CORS middleware for frontend access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development, restrict this in production
+    allow_origins=[
+        "http://localhost:5173",  # Vite dev server
+        "http://localhost:3000",  # Common dev port
+        os.getenv("FRONTEND_URL", ""),  # Production frontend URL
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -187,34 +191,27 @@ async def generate_collage_from_image_urls(media_items: List[MediaItemInput]) ->
         )
 
 
-@app.post("/generate-summary", response_model=GenerateSummaryResponse)
+@app.post("/api/generate-summary", response_model=GenerateSummaryResponse)
 async def generate_summary_endpoint(request: GenerateSummaryRequest):
     """
-    Generates a story summary and journal prompts based on a list of media items,
-    each providing a URL to an image (e.g., from Supabase Storage) and optional metadata.
+    Generates a story summary and journal prompts based on a list of media items.
     """
-    # The validation for number of items is now inside generate_collage_from_image_urls
-    # Pydantic handles validation for the structure of GenerateSummaryRequest and MediaItemInput
-    if (
-        not request.media_items
-    ):  # Should be caught by Pydantic if media_items is required and empty
-        raise HTTPException(
-            status_code=400, detail="No media items provided in the request."
-        )
+    if not request.media_items:
+        raise HTTPException(status_code=400, detail="No media items provided in the request.")
 
     result = await generate_collage_from_image_urls(request.media_items)
     return result
 
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     """
     Simple health check endpoint
     """
     return {"status": "ok"}
 
+# Create handler for Vercel
+handler = Mangum(app)
 
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# Export the handler for Vercel
+__all__ = ["handler"]
