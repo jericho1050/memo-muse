@@ -1,6 +1,8 @@
 import { useState, useEffect, forwardRef } from 'react'
 import type { Layout, Layouts } from 'react-grid-layout'
 import { Responsive, WidthProvider } from 'react-grid-layout'
+import 'react-grid-layout/css/styles.css'
+import 'react-resizable/css/styles.css'
 
 export interface CollageItem {
   id: string

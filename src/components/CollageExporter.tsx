@@ -5,7 +5,7 @@ import jsPDF from 'jspdf';
 export type ExportFormat = 'png' | 'jpeg' | 'pdf';
 
 interface CollageExporterProps {
-  targetRef: React.RefObject<HTMLDivElement>;
+  targetRef: React.RefObject<HTMLDivElement | null>;
   filename?: string;
   className?: string;
 }

@@ -246,6 +246,11 @@ const ImageCollageCreator: React.FC = () => {
   // Handle saving the layout
   const handleSaveLayout = (layout: Layout[]): void => {
     console.log("Layout saved:", layout);
+    // If layout is empty, it means the "Clear All" button was clicked
+    if (layout.length === 0) {
+      setSelectedImageIds(new Set());
+      setShowDraggableCollage(false);
+    }
     // Here you could save the layout to a database or state management store
   };
 
