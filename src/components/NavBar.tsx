@@ -38,6 +38,9 @@ function NavBar({ isAuthenticated }: NavBarProps) {
                 <Link to="/gallery" className="text-gray-700 hover:text-indigo-600 transition-colors">
                   Gallery
                 </Link>
+                <Link to="/collage" className="text-gray-700 hover:text-indigo-600 transition-colors">
+                  Collage
+                </Link>
                 <Link to="/upload" className="text-gray-700 hover:text-indigo-600 transition-colors">
                   Upload
                 </Link>

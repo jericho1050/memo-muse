@@ -1,0 +1,43 @@
+/* Hide UI elements during export */
+.exporting .export-hide {
+  display: none !important;
+}
+
+/* Remove borders and shadows during export */
+.exporting .react-grid-item {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Hide resize handles during export */
+.exporting .react-resizable-handle {
+  display: none !important;
+}
+
+/* Remove any padding/margin during export */
+.exporting .layout {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Ensure images fill their containers during export */
+.exporting .react-grid-item img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+/* Remove container styling during export */
+.exporting {
+  border: none !important;
+  background: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* Ensure the grid container is clean during export */
+.exporting > .layout {
+  background: none !important;
+  border: none !important;
+} 
