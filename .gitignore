@@ -26,4 +26,8 @@ dist-ssr
 *.sw?
 .env
 env/
+<<<<<<< Updated upstream
 .github/*
+=======
+.github/
+>>>>>>> Stashed changes
