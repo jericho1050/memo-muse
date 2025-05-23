@@ -102,6 +102,22 @@ function NavBar({ isAuthenticated }: NavBarProps) {
                     Gallery
                   </Link>
                   <Link
+                    to="/collage"
+                    className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+                    onClick={closeMenu}
+                  >
+                    <Upload size={18} className="mr-2" />
+                    Collage
+                  </Link>
+                  <Link
+                    to="/upload"
+                    className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+                    onClick={closeMenu}
+                  >
+                    <Upload size={18} className="mr-2" />
+                    Upload
+                  </Link>
+                  <Link
                     to="/upload"
                     className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
                     onClick={closeMenu}

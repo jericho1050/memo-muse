@@ -40,4 +40,85 @@
 .exporting > .layout {
   background: none !important;
   border: none !important;
+}
+
+/* Interactive controls styling */
+.collage-item-scaling {
+  border: 2px solid #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.collage-item-scale-mode {
+  border: 2px solid #10b981 !important;
+  cursor: ns-resize !important;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.collage-item-scale-mode img {
+  cursor: ns-resize !important;
+}
+
+.collage-item-scale-mode:hover {
+  border-color: #059669 !important;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.collage-item-move-mode {
+  border: 2px solid #6b7280 !important;
+  cursor: grab !important;
+}
+
+.collage-item-move-mode:active {
+  cursor: grabbing !important;
+}
+
+/* Enhanced scale controls styling */
+.scale-controls {
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.scale-controls:hover {
+  transform: scale(1.02);
+}
+
+/* Smooth scaling transitions - only when not actively scaling */
+.react-grid-item img {
+  transform-origin: center center;
+}
+
+/* Override transition during active scaling for better performance */
+.collage-item-scaling img {
+  transition: none !important;
+}
+
+/* Disable text selection and drag in scale mode */
+.collage-item-scale-mode {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.collage-item-scale-mode img {
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+}
+
+/* Mode indicator styling */
+.mode-indicator {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 } 
