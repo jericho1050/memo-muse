@@ -11,6 +11,7 @@ import LoginPage, { loginAction } from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import UploadPage from './pages/UploadPage';
 import GalleryPage from './pages/GalleryPage';
+import CollagePage from './pages/CollagePage';
 import CollectionPage from './pages/CollectionPage';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -54,6 +55,14 @@ const router = createBrowserRouter([
             element: (
               <RequireAuth>
                 <GalleryPage />
+              </RequireAuth>
+            ),
+          },
+          {
+            path: 'collage',
+            element: (
+              <RequireAuth>
+                <CollagePage />
               </RequireAuth>
             ),
           },
