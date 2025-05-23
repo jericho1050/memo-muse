@@ -101,6 +101,13 @@ npm run build
 
 Deploy the FastAPI app to your preferred hosting service (Render, Heroku, etc.)
 
+## Running Tests
+
+```bash
+npm test
+pytest fastapi/tests
+```
+
 ## Deploying to Netlify
 
 1. Connect your repository to Netlify
