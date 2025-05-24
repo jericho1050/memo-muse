@@ -1,32 +1,45 @@
 # AI MomentCollage
 
-Transform your photos and videos into meaningful memory collections with AI-generated stories and journal prompts.
+Transform your photos into meaningful memory collections with AI-generated stories and journal prompts.
 
 ## Features
 
 - **Media Management**: Upload, organize, and view your photos and videos
-- **Automatic Organization**: Extracts EXIF data to organize by date and location
+- **Image Collage Tool**: Create your own custom collage with our easy to use tool
 - **AI Story Generation**: Creates personalized narratives from your media using Groq's Llama 4 Scout
 - **Journal Prompts**: AI-generated reflection questions to deepen your connection to memories
-- **PWA Support**: Works offline and can be installed on your home screen
 - **Responsive Design**: Optimized for all devices from mobile to desktop
 
 ## Tech Stack
 
 - **Frontend**: React, TypeScript, Vite, Tailwind CSS, Framer Motion
-- **Backend**: FastAPI (Python) with Mangum for serverless deployment
-- **Storage**: Supabase (Auth, Storage, and PostgreSQL)
-- **PWA**: Service workers with vite-plugin-pwa
+- **Backend**: FastAPI (Python) 
+- **Storage**: Supabase ( Storage, and PostgreSQL)
 - **Authentication**: Supabase Auth
 - **State Management**: Zustand
 - **Deployment**: Vercel (full-stack deployment)
+
+## Demo
+
+https://github.com/user-attachments/assets/9a1be661-396d-4ca6-aaca-6922bcf73015
+
+https://github.com/user-attachments/assets/eef0d2f3-703e-4991-ba00-4af3704cabc5
+
+https://github.com/user-attachments/assets/d3bac506-5c73-4858-9e3a-056ceb7613ad
+
+https://github.com/user-attachments/assets/537dc087-1aa8-49b8-a8a3-dbd7f311d644
+
+https://github.com/user-attachments/assets/d3b15fbf-aa85-405a-a31e-01269ba252b4
+
+https://github.com/user-attachments/assets/64e96846-f01c-44b0-bc75-bd5d32e2dd2e
+
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js (v18 or newer)
-- Python 3.8+ (for local development)
+- Python 3.11 or 3.12 (for local development)
 - Supabase account
 - Groq API key
 
@@ -45,9 +58,11 @@ Transform your photos and videos into meaningful memory collections with AI-gene
 
 3. Create a `.env` file with your credentials
    ```
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   GROQ_API_KEY=your_groq_api_key
+   VITE_SUPABASE_URL=
+   VITE_SUPABASE_ANON_KEY=
+   VITE_FASTAPI_URL=http://localhost:8000/api
+   FRONTEND_URL=http://localhost:5173
+   GROQ_API_KEY=
    ```
 
 4. Start the development server
@@ -100,6 +115,8 @@ Transform your photos and videos into meaningful memory collections with AI-gene
    - `GROQ_API_KEY`
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
+   - `FRONTEND_URL`
+   - `VITE_FASTAPI_URL`
 
 The API endpoints will be available at:
 - `https://your-vercel-domain.vercel.app/api/generate-summary`
