@@ -8,7 +8,6 @@ import httpx
 import os
 from dotenv import load_dotenv
 from groq import AsyncGroq, APIError
-from mangum import Mangum
 
 # Load environment variables
 
@@ -23,7 +22,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",  # Vite dev server
         "http://localhost:3000",  # Common dev port
-        os.getenv("FRONTEND_URL", ""),  # Production frontend URL
+        os.getenv("FRONTEND_URL", "*"),  # Production frontend URL
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -210,8 +209,7 @@ async def health_check():
     """
     return {"status": "ok"}
 
-# Create handler for Vercel
-handler = Mangum(app)
+if __name__ == "__main__":
+    import uvicorn
 
-# Export the handler for Vercel
-__all__ = ["handler"]
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
