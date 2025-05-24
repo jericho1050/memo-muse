@@ -52,5 +52,6 @@ const server = {
 
 beforeAll(() => server.listen())
 afterEach(() => {
-  cleanup()
+cleanup()
+
 })
